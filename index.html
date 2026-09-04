@@ -145,9 +145,12 @@
     <div class="form-group">
         <label for="filmType">Film Type</label>
         <select id="filmType">
-            <option value="color_negative">Color Negative (C-41)</option>
-            <option value="bw">Black & White</option>
+            <option value="color_negative">Color Negative (General)</option>
+            <option value="color_high_speed">Color Negative (High Speed ISO 400+)</option>
+            <option value="bw_slow">B&W (Slow ISO < 400)</option>
+            <option value="bw_fast">B&W (Fast ISO 400+)</option>
             <option value="slide">Slide / Reversal (E-6)</option>
+            <option value="ecn2">Color Motion Picture (ECN-2 - REMOVE REM-JET)</option>
         </select>
     </div>
 
@@ -186,12 +189,14 @@
         const yearsExpired = currentYear - expiryYear;
 
         // Base rate rule: 1 stop per X years depending on film type
-        let yearsPerStop = 10; // Standard baseline for C-41 Color Negative
+        let yearsPerStop = 10; // Default C-41
 
-        if (filmType === 'bw') {
-            yearsPerStop = 15; // B&W holds up better over time
-        } else if (filmType === 'slide') {
-            yearsPerStop = 20; // Slide film tolerates very little overexposure
+        switch (filmType) {
+            case 'color_high_speed': yearsPerStop = 8; break;
+            case 'bw_slow': yearsPerStop = 25; break;
+            case 'bw_fast': yearsPerStop = 15; break;
+            case 'slide': yearsPerStop = 20; break;
+            case 'ecn2': yearsPerStop = 10; break;
         }
 
         // Adjust rate multiplier based on storage conditions
@@ -218,15 +223,17 @@
             Math.abs(curr - targetIso) < Math.abs(prev - targetIso) ? curr : prev
         );
 
-        // Generate customized advice notes based on input combination
+        // Generate customized advice notes
         let noteText = `Expired ~${yearsExpired} years ago. Requires ~${stopsToCompensate.toFixed(1)} stops of exposure compensation.`;
         
-        if (filmType === 'slide') {
+        if (filmType === 'ecn2') {
+            noteText += " WARNING: Rem-Jet backing must be removed before processing or you WILL damage lab equipment.";
+        } else if (filmType === 'slide') {
             noteText += " Note: Slide film loses color fidelity quickly when overexposed. Shoot with caution.";
-        } else if (filmType === 'color_negative') {
-            noteText += " Expect some color shifts and increased grain in the shadows.";
-        } else if (filmType === 'bw') {
-            noteText += " B&W film degrades gracefully; expect reduced contrast.";
+        } else if (filmType.includes('color')) {
+            noteText += " Note: Expect unpredictable color shifts and increased grain, particularly in the shadows.";
+        } else if (filmType.includes('bw')) {
+            noteText += " Note: B&W film generally degrades gracefully; expect reduced contrast and increased base fog.";
         }
 
         // Display results
