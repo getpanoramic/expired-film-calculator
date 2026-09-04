@@ -217,8 +217,8 @@
         // Calculate target ISO: Recommended ISO = Box ISO / (2 ^ stops)
         const targetIso = boxIso / Math.pow(2, stopsToCompensate);
 
-        // Standard camera ISO scale for rounding
-        const standardIsos = [6, 12, 25, 50, 100, 160, 200, 400, 800, 1600, 3200];
+        // Comprehensive standard camera ISO scale for practical rounding
+        const standardIsos = [0.8, 1, 1.2, 1.6, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16, 20, 25, 32, 40, 50, 64, 80, 100, 125, 160, 200, 250, 320, 400, 500, 640, 800, 1000, 1250, 1600, 2000, 2500, 3200, 4000, 5000, 6400, 8000, 10000, 12500, 16000, 20000];
         const closestIso = standardIsos.reduce((prev, curr) => 
             Math.abs(curr - targetIso) < Math.abs(prev - targetIso) ? curr : prev
         );
