@@ -145,12 +145,10 @@
     <div class="form-group">
         <label for="filmType">Film Type</label>
         <select id="filmType">
-            <option value="color_negative">Color Negative (General)</option>
-            <option value="color_high_speed">Color Negative (High Speed ISO 400+)</option>
-            <option value="bw_slow">B&W (Slow ISO < 400)</option>
-            <option value="bw_fast">B&W (Fast ISO 400+)</option>
+            <option value="c41">Color Negative (C-41)</option>
+            <option value="bw">Black & White</option>
             <option value="slide">Slide / Reversal (E-6)</option>
-            <option value="ecn2">Color Motion Picture (ECN-2 - REMOVE REM-JET)</option>
+            <option value="ecn2">Color Motion Picture (ECN-2)</option>
         </select>
     </div>
 
@@ -188,15 +186,17 @@
 
         const yearsExpired = currentYear - expiryYear;
 
-        // Base rate rule: 1 stop per X years depending on film type
-        let yearsPerStop = 10; // Default C-41
+        // Base rate rule: 1 stop per X years depending on film type and sensitivity
+        let yearsPerStop = 10; // Default fallback
 
-        switch (filmType) {
-            case 'color_high_speed': yearsPerStop = 8; break;
-            case 'bw_slow': yearsPerStop = 25; break;
-            case 'bw_fast': yearsPerStop = 15; break;
-            case 'slide': yearsPerStop = 20; break;
-            case 'ecn2': yearsPerStop = 10; break;
+        if (filmType === 'c41') {
+            yearsPerStop = (boxIso >= 400) ? 8 : 10;
+        } else if (filmType === 'bw') {
+            yearsPerStop = (boxIso >= 400) ? 15 : 25;
+        } else if (filmType === 'slide') {
+            yearsPerStop = 20;
+        } else if (filmType === 'ecn2') {
+            yearsPerStop = 10;
         }
 
         // Adjust rate multiplier based on storage conditions
@@ -230,9 +230,9 @@
             noteText += " WARNING: Rem-Jet backing must be removed before processing or you WILL damage lab equipment.";
         } else if (filmType === 'slide') {
             noteText += " Note: Slide film loses color fidelity quickly when overexposed. Shoot with caution.";
-        } else if (filmType.includes('color')) {
+        } else if (filmType === 'c41') {
             noteText += " Note: Expect unpredictable color shifts and increased grain, particularly in the shadows.";
-        } else if (filmType.includes('bw')) {
+        } else if (filmType === 'bw') {
             noteText += " Note: B&W film generally degrades gracefully; expect reduced contrast and increased base fog.";
         }
 
