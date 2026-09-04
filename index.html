@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expired Film ISO Calculator</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #ffb703;
+            --text-color: #e0e0e0;
+            --muted-text: #a0a0a0;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .calculator-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            color: var(--muted-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .result-box {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #282828;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 4px;
+            display: none;
+        }
+
+        .result-box.active {
+            display: block;
+        }
+
+        .result-title {
+            font-size: 0.8rem;
+            color: var(--muted-text);
+            text-transform: uppercase;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+            margin: 5px 0;
+        }
+
+        .result-notes {
+            font-size: 0.85rem;
+            color: var(--muted-text);
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-card">
+    <h1>Film ISO Compensation</h1>
+    
+    <div class="form-group">
+        <label for="boxIso">Box Speed (ISO)</label>
+        <input type="number" id="boxIso" placeholder="e.g. 400" value="400">
+    </div>
+
+    <div class="form-group">
+        <label for="expiryYear">Expiration Year</label>
+        <input type="number" id="expiryYear" placeholder="e.g. 2005" value="2005">
+    </div>
+
+    <div class="form-group">
+        <label for="filmType">Film Type</label>
+        <select id="filmType">
+            <option value="color_negative">Color Negative (C-41)</option>
+            <option value="bw">Black & White</option>
+            <option value="slide">Slide / Reversal (E-6)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="storage">Storage Condition (Estimate)</label>
+        <select id="storage">
+            <option value="room">Room Temperature / Unknown</option>
+            <option value="cold">Cold Stored / Fridge</option>
+            <option value="frozen">Frozen</option>
+            <option value="hot">Hot (Attic/Garage/Car)</option>
+        </select>
+    </div>
+
+    <button onclick="calculateISO()">Calculate Shooting ISO</button>
+
+    <div id="result" class="result-box">
+        <div class="result-title">Shoot This Roll At</div>
+        <div class="result-value" id="recommendedIso">ISO ---</div>
+        <div class="result-notes" id="notes"></div>
+    </div>
+</div>
+
+<script>
+    function calculateISO() {
+        const boxIso = parseFloat(document.getElementById('boxIso').value);
+        const expiryYear = parseInt(document.getElementById('expiryYear').value);
+        const filmType = document.getElementById('filmType').value;
+        const storage = document.getElementById('storage').value;
+        const currentYear = new Date().getFullYear();
+
+        if (!boxIso || !expiryYear || expiryYear >= currentYear) {
+            alert('Please enter a valid box ISO and a past expiration year.');
+            return;
+        }
+
+        const yearsExpired = currentYear - expiryYear;
+
+        // Base rate rule: 1 stop per X years depending on film type
+        let yearsPerStop = 10; // Standard baseline for C-41 Color Negative
+
+        if (filmType === 'bw') {
+            yearsPerStop = 15; // B&W holds up better over time
+        } else if (filmType === 'slide') {
+            yearsPerStop = 20; // Slide film tolerates very little overexposure
+        }
+
+        // Adjust rate multiplier based on storage conditions
+        let storageMultiplier = 1.0;
+        if (storage === 'cold') storageMultiplier = 1.5;
+        if (storage === 'frozen') storageMultiplier = 3.0;
+        if (storage === 'hot') storageMultiplier = 0.5;
+
+        // Calculate stops of overexposure required
+        const adjustedYearsPerStop = yearsPerStop * storageMultiplier;
+        let stopsToCompensate = yearsExpired / adjustedYearsPerStop;
+
+        // Apply strict limit to slide film (maximum 1 stop to avoid blown highlights)
+        if (filmType === 'slide') {
+            stopsToCompensate = Math.min(stopsToCompensate, 1.0);
+        }
+
+        // Calculate target ISO: Recommended ISO = Box ISO / (2 ^ stops)
+        const targetIso = boxIso / Math.pow(2, stopsToCompensate);
+
+        // Standard camera ISO scale for rounding
+        const standardIsos = [6, 12, 25, 50, 100, 160, 200, 400, 800, 1600, 3200];
+        const closestIso = standardIsos.reduce((prev, curr) => 
+            Math.abs(curr - targetIso) < Math.abs(prev - targetIso) ? curr : prev
+        );
+
+        // Generate customized advice notes based on input combination
+        let noteText = `Expired ~${yearsExpired} years ago. Requires ~${stopsToCompensate.toFixed(1)} stops of exposure compensation.`;
+        
+        if (filmType === 'slide') {
+            noteText += " Note: Slide film loses color fidelity quickly when overexposed. Shoot with caution.";
+        } else if (filmType === 'color_negative') {
+            noteText += " Expect some color shifts and increased grain in the shadows.";
+        } else if (filmType === 'bw') {
+            noteText += " B&W film degrades gracefully; expect reduced contrast.";
+        }
+
+        // Display results
+        document.getElementById('recommendedIso').innerText = `ISO ${closestIso}`;
+        document.getElementById('notes').innerText = noteText;
+        document.getElementById('result').classList.add('active');
+    }
+</script>
+
+</body>
+</html>
